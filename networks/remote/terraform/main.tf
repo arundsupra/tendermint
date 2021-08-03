@@ -11,7 +11,7 @@ variable "TESTNET_NAME" {
 
 variable "SSH_KEY_FILE" {
   description = "SSH public key file to be used on the nodes"
-  type = "string"
+  type = string
 }
 
 variable "SERVERS" {
@@ -19,9 +19,12 @@ variable "SERVERS" {
   default = "4"
 }
 
+
+/*
 provider "digitalocean" {
   token = "${var.DO_API_TOKEN}"
 }
+*/
 
 module "cluster" {
   source           = "./cluster"

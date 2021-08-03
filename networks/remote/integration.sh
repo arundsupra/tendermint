@@ -3,11 +3,14 @@
 # XXX: this script is intended to be run from a fresh Digital Ocean droplet
 
 # NOTE: you must set this manually now
-echo "export DO_API_TOKEN=\"yourtoken\"" >> ~/.profile
+echo "export DO_API_TOKEN=\"YOUR_DIGITALOCEAN_TOKEN\"" >> ~/.profile
 
 sudo apt-get update -y
 sudo apt-get upgrade -y
-sudo apt-get install -y jq unzip python-pip software-properties-common make
+sudo apt-get install -y gnupg curl
+curl -fsSL https://apt.releases.hashicorp.com/gpg | sudo apt-key add -
+sudo apt-add-repository "deb [arch=amd64] https://apt.releases.hashicorp.com $(lsb_release -cs) main"
+sudo apt-get install -y jq unzip python3-pip software-properties-common make terraform 
 
 # get and unpack golang
 curl -O https://dl.google.com/go/go1.16.5.linux-amd64.tar.gz
@@ -46,10 +49,6 @@ ssh-keygen -f $HOME/.ssh/id_rsa -t rsa -N ''
 echo "export SSH_KEY_FILE=\"\$HOME/.ssh/id_rsa.pub\"" >> ~/.profile
 source ~/.profile
 
-# install terraform
-wget https://releases.hashicorp.com/terraform/0.11.7/terraform_0.11.7_linux_amd64.zip
-unzip terraform_0.11.7_linux_amd64.zip -d /usr/bin/
-
 # install ansible
 sudo apt-get update -y
 sudo apt-add-repository ppa:ansible/ansible -y
@@ -67,6 +66,7 @@ terraform apply -var DO_API_TOKEN="$DO_API_TOKEN" -var SSH_KEY_FILE="$SSH_KEY_FI
 
 # let the droplets boot
 sleep 60
+
 
 # get the IPs
 ip0=`terraform output -json public_ips | jq '.value[0]'`
@@ -86,6 +86,18 @@ ip0=$(strip $ip0)
 ip1=$(strip $ip1)
 ip2=$(strip $ip2)
 ip3=$(strip $ip3)
+
+if False: '''
+ip0=159.65.196.83
+ip1=178.128.192.72
+ip2=138.68.144.107
+ip3=164.90.139.251
+
+print ("Node1 IP is ", ip0)
+print ("Node2 IP is ", ip1)
+print ("Node3 IP is ", ip2)
+print ("Node4 IP is ", ip3)
+'''
 
 # all the ansible commands are also directory specific
 cd $GOPATH/src/github.com/tendermint/tendermint/networks/remote/ansible

@@ -16,9 +16,11 @@ resource "digitalocean_droplet" "cluster" {
   count = "${var.servers}"
   tags = ["${digitalocean_tag.cluster.id}"]
 
+/*
   lifecycle = {
 	prevent_destroy = false
   }
+*/
 
   connection {
     timeout = "30s"
