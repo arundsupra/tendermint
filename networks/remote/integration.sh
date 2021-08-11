@@ -3,14 +3,22 @@
 # XXX: this script is intended to be run from a fresh Digital Ocean droplet
 
 # NOTE: you must set this manually now
-echo "export DO_API_TOKEN=\"YOUR_DIGITALOCEAN_TOKEN\"" >> ~/.profile
+echo "export DO_API_TOKEN=\"YOUR_DIGITALOCEAN_API_KEY\"" >> ~/.profile
+#echo "export IBM_API_TOKEN=\"YOUR_DIGITALOCEAN_API_KEY\"" >> ~/.profile
 
 sudo apt-get update -y
 sudo apt-get upgrade -y
-sudo apt-get install -y gnupg curl
+#Install python 2.7
+sudo apt-get install -y jq unzip python2.7 software-properties-common make gnupg  curl
+#Install pip (for python2)
+curl https://bootstrap.pypa.io/pip/2.7/get-pip.py --output get-pip.py
+python2 get-pip.py
+
+#Install Terraform latest version (this will remove below section which installs Terraform 0.11.x)
 curl -fsSL https://apt.releases.hashicorp.com/gpg | sudo apt-key add -
 sudo apt-add-repository "deb [arch=amd64] https://apt.releases.hashicorp.com $(lsb_release -cs) main"
-sudo apt-get install -y jq unzip python3-pip software-properties-common make terraform 
+sudo apt-get update && sudo apt-get install terraform
+
 
 # get and unpack golang
 curl -O https://dl.google.com/go/go1.16.5.linux-amd64.tar.gz
@@ -30,7 +38,7 @@ echo "export GO111MODULE=on" >> ~/.profile
 
 source ~/.profile
 
-mkdir -p $GOPATH/src/github.com/tendermint
+#mkdir -p $GOPATH/src/github.com/tendermint
 cd $GOPATH/src/github.com/tendermint
 # ** use git clone instead of go get.
 # once go module is on, go get will download source code to
@@ -49,6 +57,10 @@ ssh-keygen -f $HOME/.ssh/id_rsa -t rsa -N ''
 echo "export SSH_KEY_FILE=\"\$HOME/.ssh/id_rsa.pub\"" >> ~/.profile
 source ~/.profile
 
+## THis terraform installation should be completely removed as this installs older ver of Terraform
+##wget https://releases.hashicorp.com/terraform/0.11.7/terraform_0.11.7_linux_amd64.zip
+##unzip terraform_0.11.7_linux_amd64.zip -d /usr/bin/
+
 # install ansible
 sudo apt-get update -y
 sudo apt-add-repository ppa:ansible/ansible -y
@@ -57,16 +69,24 @@ sudo apt-get install ansible -y
 
 # required by ansible
 pip install dopy
+echo "dopy is installed"
+echo " "
+echo " "
+
 
 # the next two commands are directory sensitive
 cd $GOPATH/src/github.com/tendermint/tendermint/networks/remote/terraform
 
 terraform init
 terraform apply -var DO_API_TOKEN="$DO_API_TOKEN" -var SSH_KEY_FILE="$SSH_KEY_FILE" -auto-approve
+#terraform apply -var IBM_API_TOKEN="$IBM_API_TOKEN" -var SSH_KEY_FILE="$SSH_KEY_FILE" -auto-approve
+
 
 # let the droplets boot
-sleep 60
-
+echo "waiting for the droplets to boot"
+#sleep 60
+#now set it to less as droplets are already running
+sleep 1
 
 # get the IPs
 ip0=`terraform output -json public_ips | jq '.value[0]'`
@@ -87,17 +107,20 @@ ip1=$(strip $ip1)
 ip2=$(strip $ip2)
 ip3=$(strip $ip3)
 
-if False: '''
-ip0=159.65.196.83
-ip1=178.128.192.72
-ip2=138.68.144.107
-ip3=164.90.139.251
 
-print ("Node1 IP is ", ip0)
-print ("Node2 IP is ", ip1)
-print ("Node3 IP is ", ip2)
-print ("Node4 IP is ", ip3)
-'''
+if [ 1 -eq 0 ]; then
+ip0="188.166.39.115"
+ip1="46.101.125.74"
+ip2="46.101.6.238"
+ip3="159.65.180.92"
+fi
+
+echo "Node0 IP is $ip0"
+echo "Node1 IP is $ip1"
+echo "Node2 IP is $ip2"
+echo "Node3 IP is $ip3"
+
+
 
 # all the ansible commands are also directory specific
 cd $GOPATH/src/github.com/tendermint/tendermint/networks/remote/ansible
