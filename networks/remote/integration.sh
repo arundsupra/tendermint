@@ -1,34 +1,31 @@
 #!/usr/bin/env bash
+#$# this script is intended to be run from a fresh Terraform Virtual Server Instances
 
-# XXX: this script is intended to be run from a fresh Digital Ocean droplet
-
+export DEPLOY_ENV="STARTED"
+if [ $DEPLOY_ENV -eq "STARTED" ]; then
+echo ".......................................PHASE1.................................."
 # NOTE: you must set this manually now
-echo "export DO_API_TOKEN=\"YOUR_DIGITALOCEAN_API_KEY\"" >> ~/.profile
-#echo "export IBM_API_TOKEN=\"YOUR_DIGITALOCEAN_API_KEY\"" >> ~/.profile
+echo "export IBM_API_TOKEN=\"JUbX8h2y6qu0QwJOXTfV0QZzNE1M06UCUQMa15-emISC\"" >> ~/.profile
 
 sudo apt-get update -y
 sudo apt-get upgrade -y
-#Install python 2.7
-sudo apt-get install -y jq unzip python2.7 software-properties-common make gnupg  curl
-#Install pip (for python2)
+sudo apt-get install -y jq unzip python2.7 software-properties-common make
 curl https://bootstrap.pypa.io/pip/2.7/get-pip.py --output get-pip.py
 python2 get-pip.py
-
-#Install Terraform latest version (this will remove below section which installs Terraform 0.11.x)
+sudo apt-get update && sudo apt-get install -y gnupg  curl
 curl -fsSL https://apt.releases.hashicorp.com/gpg | sudo apt-key add -
 sudo apt-add-repository "deb [arch=amd64] https://apt.releases.hashicorp.com $(lsb_release -cs) main"
 sudo apt-get update && sudo apt-get install terraform
-
 
 # get and unpack golang
 curl -O https://dl.google.com/go/go1.16.5.linux-amd64.tar.gz
 tar -xvf go1.16.5.linux-amd64.tar.gz
 
-## move binary and add to path
+# move binary and add to path
 mv go /usr/local
 echo "export PATH=\$PATH:/usr/local/go/bin" >> ~/.profile
 
-## create the goApps directory, set GOPATH, and put it on PATH
+# create the goApps directory, set GOPATH, and put it on PATH
 mkdir goApps
 echo "export GOPATH=/root/goApps" >> ~/.profile
 echo "export PATH=\$PATH:\$GOPATH/bin" >> ~/.profile
@@ -38,7 +35,7 @@ echo "export GO111MODULE=on" >> ~/.profile
 
 source ~/.profile
 
-#mkdir -p $GOPATH/src/github.com/tendermint
+mkdir -p $GOPATH/src/github.com/tendermint
 cd $GOPATH/src/github.com/tendermint
 # ** use git clone instead of go get.
 # once go module is on, go get will download source code to
@@ -46,7 +43,7 @@ cd $GOPATH/src/github.com/tendermint
 # script will not work
 git clone https://github.com/tendermint/tendermint.git
 cd tendermint
-## build
+ build
 make tools
 make build
 #** need to install the package, otherwise terdermint testnet will not execute
@@ -57,42 +54,46 @@ ssh-keygen -f $HOME/.ssh/id_rsa -t rsa -N ''
 echo "export SSH_KEY_FILE=\"\$HOME/.ssh/id_rsa.pub\"" >> ~/.profile
 source ~/.profile
 
-## THis terraform installation should be completely removed as this installs older ver of Terraform
-##wget https://releases.hashicorp.com/terraform/0.11.7/terraform_0.11.7_linux_amd64.zip
-##unzip terraform_0.11.7_linux_amd64.zip -d /usr/bin/
-
 # install ansible
 sudo apt-get update -y
 sudo apt-add-repository ppa:ansible/ansible -y
 sudo apt-get update -y
 sudo apt-get install ansible -y
 
-# required by ansible
-pip install dopy
-echo "dopy is installed"
-echo " "
-echo " "
+fi
 
+export DEPLOY_ENV="COMPLETED"
+source ~/.profile
+echo ".......................................PHASE2.................................."
 
 # the next two commands are directory sensitive
 cd $GOPATH/src/github.com/tendermint/tendermint/networks/remote/terraform
 
 terraform init
-terraform apply -var DO_API_TOKEN="$DO_API_TOKEN" -var SSH_KEY_FILE="$SSH_KEY_FILE" -auto-approve
-#terraform apply -var IBM_API_TOKEN="$IBM_API_TOKEN" -var SSH_KEY_FILE="$SSH_KEY_FILE" -auto-approve
-
+terraform apply -var IBM_API_TOKEN="$IBM_API_TOKEN" -var SSH_KEY_FILE="$SSH_KEY_FILE" -auto-approve
 
 # let the droplets boot
 echo "waiting for the droplets to boot"
-#sleep 60
-#now set it to less as droplets are already running
 sleep 1
+pwd
+ls -lah
+terraform output -json public_ips
+sleep 60
 
-# get the IPs
-ip0=`terraform output -json public_ips | jq '.value[0]'`
-ip1=`terraform output -json public_ips | jq '.value[1]'`
-ip2=`terraform output -json public_ips | jq '.value[2]'`
-ip3=`terraform output -json public_ips | jq '.value[3]'`
+cd $GOPATH/src/github.com/tendermint/tendermint/networks/remote/terraform
+#cd ~/goApps/src/github.com/tendermint/tendermint/networks/remote/terraform
+pwd
+ip0=`terraform output -json public_ips | jq '.[0][0]'
+ip1=`terraform output -json public_ips | jq '.[0][0]'
+ip2=`terraform output -json public_ips | jq '.[0][0]'
+ip3=`terraform output -json public_ips | jq '.[0][0]'
+
+
+echo "IP CHECK1"
+echo "Node0 IP is $ip0"
+echo "Node1 IP is $ip1"
+echo "Node2 IP is $ip2"
+echo "Node3 IP is $ip3"
 
 # to remove quotes
 strip() {
@@ -107,20 +108,11 @@ ip1=$(strip $ip1)
 ip2=$(strip $ip2)
 ip3=$(strip $ip3)
 
-
-if [ 1 -eq 0 ]; then
-ip0="188.166.39.115"
-ip1="46.101.125.74"
-ip2="46.101.6.238"
-ip3="159.65.180.92"
-fi
-
+echo "IP CHECK2"
 echo "Node0 IP is $ip0"
 echo "Node1 IP is $ip1"
 echo "Node2 IP is $ip2"
 echo "Node3 IP is $ip3"
-
-
 
 # all the ansible commands are also directory specific
 cd $GOPATH/src/github.com/tendermint/tendermint/networks/remote/ansible
@@ -133,16 +125,37 @@ ansible-playbook -i inventory/digital_ocean.py -l sentrynet config.yml -e BINARY
 
 sleep 10
 
+echo "IP CHECK3"
+echo "Node0 IP is $ip0"
+echo "Node1 IP is $ip1"
+echo "Node2 IP is $ip2"
+echo "Node3 IP is $ip3"
+
+
 # get each nodes ID then populate the ansible file
 id0=`curl $ip0:26657/status | jq .result.node_info.id`
 id1=`curl $ip1:26657/status | jq .result.node_info.id`
 id2=`curl $ip2:26657/status | jq .result.node_info.id`
 id3=`curl $ip3:26657/status | jq .result.node_info.id`
 
+
+echo "ID CHECK1"
+echo "Node0 ID is $id0"
+echo "Node1 ID is $id1"
+echo "Node2 ID is $id2"
+echo "Node3 ID is $id3"
+
+
 id0=$(strip $id0)
 id1=$(strip $id1)
 id2=$(strip $id2)
 id3=$(strip $id3)
+
+echo "ID CHECK2"
+echo "Node0 ID is $id0"
+echo "Node1 ID is $id1"
+echo "Node2 ID is $id2"
+echo "Node3 ID is $id3"
 
 # remove file we'll re-write to with new info
 old_ansible_file=$GOPATH/src/github.com/tendermint/tendermint/networks/remote/ansible/roles/install/templates/systemd.service.j2
