@@ -11,7 +11,7 @@ terraform {
 
 //provider.tf
 provider "ibm" {
-  ibmcloud_api_key = "JUbX8h2y6qu0QwJOXTfV0QZzNE1M06UCUQMa15-emISC"
+  ibmcloud_api_key = "YOUR IBMCLOUD API KEY"
 }
 
 //variables.tf
