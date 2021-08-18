@@ -32,7 +32,6 @@ variable "image" {
   type        = string
   //imageid for ubuntu-20-04-amd64
   default = "r006-396ef8b6-91a3-48ce-a83b-0c6f67105cad"
-  //default = "ubuntu-20-04-amd64"
 }
 
 variable "profile" {
@@ -40,36 +39,6 @@ variable "profile" {
   type        = string
   default =  "bx2-4x16"
 }
-
-
-
-/*
-variable "ssh_keys" {
-  description = "List of ssh key IDs to the instance"
-  type        = list(string)
-  default = ["<sshKeyID>"]
-}
-
-variable "vpc" {
-  description = "VPC name"
-  type        = string
-  default = "ttvpc1"
-}
-
-variable "primary_network_interface" {
-  description = "List of primary_network_interface that are to be attached to the instance"
-  type = list(object({
-    subnet               = string
-    interface_name       = string
-    security_groups      = list(string)
-    primary_ipv4_address = string
-  }))
-}
-*/
-
-#####################################################
-# Optional Parameters
-#####################################################
 
 variable "resource_group" {
   description = "Resource group name"
@@ -147,16 +116,8 @@ resource "ibm_is_instance" "cluster" {
   profile = "${var.profile}"
   vpc = data.ibm_is_vpc.vpc.id
 
-/*
-  primary_network_interface {
-    subnet          = ibm_is_subnet.subnet1.id
-    security_groups = [ibm_is_security_group.sg1.id]
-  }
-*/
-
   primary_network_interface {
     subnet = ibm_is_subnet.subnet1.id
-    //primary_ipv4_address = "192.168.123.3"
   }
 
 }
