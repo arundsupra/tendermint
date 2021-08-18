@@ -104,14 +104,20 @@ resource "ibm_is_subnet" "subnet1" {
 resource "ibm_is_instance" "cluster" {
 //reqd parameters
 //image,keys,primary_network_interface,profile,vpc,zone
+// DONE - Single node Single region
+// DONE - Multiple Nodes single region
+
+// TODO - Multiple nodes Multiple regions MNMR
+// TODO - Single Node Multiple Regions SNMR
   count = "${var.no_of_instances}"
   keys = [ibm_is_ssh_key.aruntfkey1.id]
   name = "${var.name}node${count.index}"
 // using "ubuntu-20-04-amd64" =  "r006-396ef8b6-91a3-48ce-a83b-0c6f67105cad"
   image = var.image
 
-//  zone = "${element(var.regions, count.index)}"
-//    zone = "${var.regions.count.index}"
+// for_each = {for vm in var.regions:  vm.hostname => vm}
+// zone = "${element(var.regions, count.index)}"
+// zone = "${var.regions.count.index}"
   zone = var.location
   profile = "${var.profile}"
   vpc = data.ibm_is_vpc.vpc.id
